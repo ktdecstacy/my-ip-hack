@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Real-Time Data Privacy Awareness Demo</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    max-width: 700px;
+    margin: 30px auto;
+    padding: 20px;
+    background: #f9f9f9;
+    color: #222;
+  }
+  h1, h2 {
+    color: #0d47a1;
+  }
+  section {
+    background: white;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 3px 6px rgb(0 0 0 / 0.1);
+  }
+  .info {
+    font-size: 1.1rem;
+    margin: 10px 0;
+  }
+  code {
+    background: #e0e0e0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: Consolas, monospace;
+  }
+  footer {
+    font-size: 0.9rem;
+    color: #555;
+    text-align: center;
+    margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Real-Time Data Privacy Awareness Demo</h1>
+
+<section>
+  <h2>Your Public IP Address</h2>
+  <div id="ipAddress" class="info">Loading your IP address...</div>
+</section>
+
+<section>
+  <h2>Your Browser & Device Info</h2>
+  <div id="browserInfo" class="info"></div>
+  <div id="deviceName" class="info"></div>
+</section>
+
+<section>
+  <h2>Current Date & Time</h2>
+  <div id="timeInfo" class="info"></div>
+</section>
+
+<section>
+  <h2>Approximate Location (Based on IP)</h2>
+  <div id="locationInfo" class="info">Loading location info...</div>
+  <div id="postalCode" class="info"></div>
+</section>
+
+<section>
+  <h2>Referring Website</h2>
+  <div id="referrerInfo" class="info"></div>
+</section>
+
+<section>
+  <h2>Why Do Websites Collect This Data?</h2>
+  <p>
+    When you visit websites, they often collect information like your IP address, browser type, device details, and location.
+    This helps websites improve security, personalize your experience, or track visits for analytics.
+  </p>
+  <p><strong>Be aware:</strong> This data can also be used to track you across the web or target you with ads.</p>
+  <p>To protect your privacy:</p>
+  <ul>
+    <li>Use a trusted VPN or proxy service</li>
+    <li>Adjust your browser’s privacy settings</li>
+    <li>Be cautious about which sites you visit</li>
+    <li>Regularly clear cookies and cache</li>
+  </ul>
+</section>
+
+<footer>© 2025 KTD Cybersecurity Awareness</footer>
+
+<script>
+// Show browser and device info
+function getBrowserInfo() {
+  const ua = navigator.userAgent;
+  const platform = navigator.platform;
+  const language = navigator.language || navigator.userLanguage;
+  const vendor = navigator.vendor || 'Unknown';
+
+  let info = `
+  User Agent: <code>${ua}</code><br>
+  Platform: <code>${platform}</code><br>
+  Language: <code>${language}</code><br>
+  Vendor: <code>${vendor}</code>
+  `;
+  return info.trim();
+}
+
+// Simple device name guesser based on platform & userAgent
+function getDeviceName() {
+  const ua = navigator.userAgent.toLowerCase();
+  const platform = navigator.platform.toLowerCase();
+
+  if (/iphone|ipad|ipod/.test(ua)) return 'Apple iOS Device';
+  if (/android/.test(ua)) return 'Android Device';
+  if (/win/.test(platform)) return 'Windows PC';
+  if (/mac/.test(platform)) return 'Macintosh';
+  if (/linux/.test(platform)) return 'Linux PC';
+  return 'Unknown Device';
+}
+
+// Live updating date & time
+function updateTime() {
+  const now = new Date();
+
+  // Date in readable format e.g. Monday, June 9, 2025
+  const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  const dateString = now.toLocaleDateString(undefined, dateOptions);
+
+  // Time with seconds e.g. 3:45:12 PM
+  const timeString = now.toLocaleTimeString();
+
+  // Timezone
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Unknown';
+
+  document.getElementById('timeInfo').innerHTML = `
+    Date: <code>${dateString}</code><br>
+    Time: <code>${timeString}</code><br>
+    Timezone: <code>${timezone}</code>
+  `;
+}
+
+// Get referrer info
+function getReferrerInfo() {
+  const referrer = document.referrer;
+  return referrer ? `<code>${referrer}</code>` : 'No referrer detected (you accessed this page directly or from a bookmark).';
+}
+
+// Fetch public IP and location using ipapi.co API (no token required)
+async function fetchIPandLocation() {
+  const ipEl = document.getElementById('ipAddress');
+  const locEl = document.getElementById('locationInfo');
+  const postalEl = document.getElementById('postalCode');
+
+  try {
+    const response = await fetch('https://ipapi.co/json/');
+    if (!response.ok) throw new Error('Failed to fetch IP info');
+
+    const data = await response.json();
+
+    ipEl.innerHTML = `<code>${data.ip}</code>`;
+
+    let locText = `City: <code>${data.city || 'Unknown'}</code>, Region: <code>${data.region || 'Unknown'}</code>, Country: <code>${data.country_name || 'Unknown'}</code>`;
+    if (data.latitude && data.longitude) {
+      locText += `<br>Coordinates (lat,long): <code>${data.latitude}, ${data.longitude}</code>`;
+    }
+    locEl.innerHTML = locText;
+
+    postalEl.innerHTML = data.postal ? `Postal Code: <code>${data.postal}</code>` : 'Postal Code: <code>Unknown</code>';
+
+  } catch (e) {
+    ipEl.textContent = 'Could not load IP address.';
+    locEl.textContent = 'Could not load location info.';
+    postalEl.textContent = 'Could not load postal code.';
+  }
+}
+
+// Set all info on page load
+window.onload = () => {
+  document.getElementById('browserInfo').innerHTML = getBrowserInfo();
+  document.getElementById('deviceName').innerHTML = `Device: <code>${getDeviceName()}</code>`;
+  document.getElementById('referrerInfo').innerHTML = getReferrerInfo();
+  fetchIPandLocation();
+
+  // Start live time update every second
+  updateTime();
+  setInterval(updateTime, 1000);
+};
+</script>
+
+</body>
+</html>
